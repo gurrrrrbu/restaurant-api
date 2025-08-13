@@ -3,5 +3,6 @@ services:
     name: restaurant-api
     env: node
     buildCommand: npm install
-    startCommand: node start
+    startCommand: node app.js
     plan: free
+    rootDir: .
