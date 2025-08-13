@@ -1,0 +1,17 @@
+<div class="container">
+  <h2>Find Restaurants</h2>
+  <form method="GET" action="/restaurants">
+    <div class="row mb-3">
+      <div class="col">
+        <input type="number" name="page" class="form-control" placeholder="Page" required>
+      </div>
+      <div class="col">
+        <input type="number" name="perPage" class="form-control" placeholder="Per Page" required>
+      </div>
+      <div class="col">
+        <input type="text" name="borough" class="form-control" placeholder="Borough">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Search</button>
+  </form>
+</div>

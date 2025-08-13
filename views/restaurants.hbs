@@ -1,0 +1,28 @@
+{{!-- views/restaurants.hbs --}}
+<h2>Restaurants</h2>
+
+<ul>
+  {{#each restaurants}}
+    <li>{{this.name}} - {{this.borough}}</li>
+  {{/each}}
+</ul>
+
+<div class="d-flex justify-content-between mt-4">
+  {{#if prevPage}}
+    <a class="btn btn-outline-primary" href="/restaurants?page={{prevPage}}&perPage={{perPage}}{{#if borough}}&borough={{borough}}{{/if}}">Previous</a>
+  {{/if}}
+
+  {{#if nextPage}}
+    <a class="btn btn-outline-primary" href="/restaurants?page={{nextPage}}&perPage={{perPage}}{{#if borough}}&borough={{borough}}{{/if}}">Next</a>
+  {{/if}}
+</div>
+<div class="d-flex justify-content-between mt-4">
+  {{#if prevPage}}
+    <a class="btn btn-outline-primary" href="/restaurants?page={{prevPage}}&perPage={{perPage}}&borough={{borough}}">Previous</a>
+  {{/if}}
+  
+  {{#if nextPage}}
+    <a class="btn btn-outline-primary" href="/restaurants?page={{nextPage}}&perPage={{perPage}}&borough={{borough}}">Next</a>
+  {{/if}}
+</div>
+
