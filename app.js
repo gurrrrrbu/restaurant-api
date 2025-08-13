@@ -4,8 +4,8 @@
  * No part of this assignment has been copied manually or electronically from any other source 
  * (including web sites) or distributed to other students. 
  * 
- * Group member Name: Tandin Phurba, Student IDs:N01654961 Date: 12/08/2025
- * Group member Name: Aszad Khan, Student IDs:N01654961 Date: 12/08/2025
+ * Group member Name: Tandin Phurba, Student IDs: N01654961  Date: 12/08/2025
+ * Group member Name: Aszad Khan,  Student IDs: N01668211   Date: 12/08/2025
  ******************************************************************************/
 
 require('dotenv').config();
@@ -13,34 +13,51 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const exphbs = require('express-handlebars');
+const { engine } = require('express-handlebars');
 
-// import the router
+// Routers
 const restaurantRoutes = require('./routes/restaurantRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Handlebars 
-app.engine('.hbs', exphbs.engine({ extname: '.hbs' }));
+// ---- Config ----
+const PORT = process.env.PORT || 3000;
+// Allow either MONGODB_URI (recommended) or your existing MONGODB_CONN_STRING
+const MONGO_URI = process.env.MONGODB_URI || process.env.MONGODB_CONN_STRING;
+
+// ---- View Engine (Handlebars) ----
+app.engine('.hbs', engine({ extname: '.hbs' }));
 app.set('view engine', '.hbs');
 
-// Middleware
+// ---- Middleware ----
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Mount routes
+// ---- Health / Root routes (so Render health checks pass) ----
+app.get('/', (_req, res) => res.status(200).send('OK'));
+app.get('/healthz', (_req, res) => res.status(200).json({ status: 'ok' }));
+
+// ---- App Routes ----
 app.use('/', restaurantRoutes);
 
-// MongoDB Atlas connection
-mongoose.connect(process.env.MONGODB_CONN_STRING)
-  .then(() => {
-    console.log('✅ Connected to MongoDB Atlas');
-    app.listen(PORT, () => {
-      console.log(`Server running at http://localhost:${PORT}`);
+// ---- Start Server (after DB connects) ----
+(async () => {
+  try {
+    if (!MONGO_URI) {
+      throw new Error('Missing MongoDB connection string. Set MONGODB_URI (preferred) or MONGODB_CONN_STRING.');
+    }
+
+    // Tighten server selection timeout so failed deploys surface quickly
+    await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 15000 });
+    console.log('✅ Connected to MongoDB');
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on port ${PORT}`);
     });
-  })
-  .catch((err) => {
-    console.error('MongoDB connection error:', err.message);
-  });
+  } catch (err) {
+    console.error('❌ Startup error:', err.message);
+    // Fail fast so Render marks the deploy as failed with visible logs
+    process.exit(1);
+  }
+})();

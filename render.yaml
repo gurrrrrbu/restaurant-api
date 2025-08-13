@@ -2,7 +2,13 @@ services:
   - type: web
     name: restaurant-api
     env: node
-    buildCommand: npm install
-    startCommand: node app.js
     plan: free
     rootDir: .
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: MONGODB_URI
+        sync: false
