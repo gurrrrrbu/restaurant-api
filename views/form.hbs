@@ -1,12 +1,8 @@
 <div class="container my-4">
-  <div class="mb-3">
-    <span class="btn btn-outline-secondary disabled">Search Restaurants</span>
-  </div>
-
   <h1>Find Restaurants</h1>
 
   <form method="GET" action="/restaurants" class="mt-3">
-    <div class="row g-2">
+    <div class="row g-2 align-items-center">
       <div class="col-auto">
         <input type="number" name="page" min="1" value="{{page}}" class="form-control" placeholder="Page" required>
       </div>

@@ -1,16 +1,16 @@
 <div class="container my-4">
-  <div class="mb-3">
-    <span class="btn btn-outline-secondary disabled">Search Restaurants</span>
-    <form method="GET" action="/restaurants" class="d-inline ms-2">
-      <input type="hidden" name="page" value="1">
-      <input type="hidden" name="perPage" value="{{perPage}}">
-      <input class="form-control d-inline w-auto" type="text" name="borough" placeholder="Borough (optional)"
-             value="{{borough}}">
-      <button class="btn btn-primary ms-2" type="submit">Search</button>
-    </form>
-  </div>
-
   <h1>Restaurants</h1>
+
+  <form method="GET" action="/restaurants" class="row g-2 align-items-center mb-3">
+    <input type="hidden" name="page" value="1">
+    <input type="hidden" name="perPage" value="{{perPage}}">
+    <div class="col-auto">
+      <input class="form-control" type="text" name="borough" placeholder="Borough (optional)" value="{{borough}}">
+    </div>
+    <div class="col-auto">
+      <button class="btn btn-primary" type="submit">Search</button>
+    </div>
+  </form>
 
   {{#if restaurants.length}}
     <ul class="list-group my-3">
