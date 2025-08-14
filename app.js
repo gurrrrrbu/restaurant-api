@@ -18,7 +18,7 @@ const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
 const { engine } = require('express-handlebars');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs'); // safer on Vercel than native bcrypt
+const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
 
 const restaurantRoutes = require('./routes/restaurantRoutes');
@@ -29,7 +29,7 @@ const app = express();
 
 // ---- Config ----
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGODB_CONN_STRING;
-const DB_NAME   = process.env.MONGO_DBNAME || 'sample_restaurants';
+const DB_NAME   = process.env.MONGO_DBNAME || 'sample_restaurant'; // ← singular
 
 if (!process.env.JWT_SECRET) {
   throw new Error('Missing JWT_SECRET in environment');
@@ -68,6 +68,18 @@ app.get('/healthz', (_req, res) => res.status(200).send('OK'));
 app.get('/', (_req, res) => res.render('form', { page: 1, perPage: 5, borough: '' }));
 app.get('/form', (_req, res) => res.redirect('/'));
 
+// (Optional) diag endpoint for debugging only (disabled in production)
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/diag', (_req, res) => {
+    res.json({
+      readyState: mongoose.connection.readyState,
+      dbName: mongoose.connection.name,
+      hasUri: !!process.env.MONGODB_URI,
+      hasSecret: !!process.env.JWT_SECRET
+    });
+  });
+}
+
 // ---- Reuse a single Mongo connection (important for serverless) ----
 async function ensureMongo() {
   if (!MONGO_URI) {
@@ -76,7 +88,10 @@ async function ensureMongo() {
   }
   // 0=disc, 1=conn, 2=connecting, 3=disconnecting
   if (mongoose.connection.readyState === 1) return;
-  await mongoose.connect(MONGO_URI, { dbName: DB_NAME, serverSelectionTimeoutMS: 10000 });
+  await mongoose.connect(MONGO_URI, {
+    dbName: DB_NAME,
+    serverSelectionTimeoutMS: 30000 // ↑ more time for cold starts
+  });
   console.log('✅ Mongo connected to DB:', mongoose.connection.name);
 }
 
@@ -85,7 +100,7 @@ app.use(async (req, res, next) => {
   const needsDb =
     req.path.startsWith('/login') ||
     req.path.startsWith('/api/') ||
-    req.path.startsWith('/restaurants');   // ← added so the view route can query DB
+    req.path.startsWith('/restaurants'); // the view page queries DB
   if (!needsDb) return next();
 
   try {
@@ -134,10 +149,10 @@ app.post(
 // Public GETs, protected writes handled inside router
 app.use('/', restaurantRoutes);
 
-// Example of protecting *all* /api routes (uncomment if you prefer blanket protection):
+// Example: protect all /api with JWT (leave commented if not desired)
 // app.use('/api', authenticateToken, restaurantRoutes);
 
-// ---- Basic error handlers (nice polish) ----
+// ---- Basic error handlers ----
 app.use((req, res) => {
   res.status(404).json({ message: 'Not found' });
 });
