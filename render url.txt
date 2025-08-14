@@ -1,0 +1,3 @@
+https://restaurant-api-g1wr.onrender.com/
+
+https://restaurant-api-g1wr.onrender.com/healthz
