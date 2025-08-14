@@ -26,7 +26,14 @@ const MONGO_URI = process.env.MONGODB_URI || process.env.MONGODB_CONN_STRING;
 const DB_NAME = process.env.MONGO_DBNAME || 'sample_restaurants';
 
 // ---- View Engine (Handlebars) ----
-app.engine('.hbs', engine({ extname: '.hbs' }));
+// Add small helpers used by templates to avoid runtime errors.
+app.engine('.hbs', engine({
+  extname: '.hbs',
+  helpers: {
+    increment: v => (Number(v) || 0) + 1,
+    decrement: v => Math.max((Number(v) || 1) - 1, 1)
+  }
+}));
 app.set('view engine', '.hbs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -39,10 +46,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ---- Health check (for Render) ----
 app.get('/healthz', (_req, res) => res.status(200).send('OK'));
 
-// ---- Root -> send users to list page with sensible defaults ----
+// ---- Root = search form (no Home tab needed) ----
 app.get('/', (_req, res) => {
   return res.render('form', { page: 1, perPage: 5, borough: '' });
 });
+
+// Backward compatibility for old links
+app.get('/form', (_req, res) => res.redirect('/'));
 
 // ---- App Routes ----
 app.use('/', restaurantRoutes);
