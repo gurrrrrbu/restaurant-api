@@ -26,7 +26,6 @@ const MONGO_URI = process.env.MONGODB_URI || process.env.MONGODB_CONN_STRING;
 const DB_NAME = process.env.MONGO_DBNAME || 'sample_restaurants';
 
 // ---- View Engine (Handlebars) ----
-// Add small helpers used by templates to avoid runtime errors.
 app.engine('.hbs', engine({
   extname: '.hbs',
   helpers: {
@@ -46,37 +45,41 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ---- Health check (for Render) ----
 app.get('/healthz', (_req, res) => res.status(200).send('OK'));
 
-// ---- Root = search form (no Home tab needed) ----
+// ---- Root = search form ----
 app.get('/', (_req, res) => {
   return res.render('form', { page: 1, perPage: 5, borough: '' });
 });
 
-// Backward compatibility for old links
+// Backward compatibility if anything links to /form
 app.get('/form', (_req, res) => res.redirect('/'));
+
+// ---- Gate routes that need the DB until it’s ready ----
+let dbReady = false;
+app.use((req, res, next) => {
+  if (!dbReady && req.path.startsWith('/restaurants')) {
+    return res.status(503).send('Database not ready. Try again in a moment.');
+  }
+  next();
+});
 
 // ---- App Routes ----
 app.use('/', restaurantRoutes);
 
-// ---- Start Server after DB connects ----
-(async () => {
-  try {
-    if (!MONGO_URI) {
-      throw new Error('Missing MongoDB connection string. Set MONGODB_URI (preferred) or MONGODB_CONN_STRING.');
-    }
-
-    await mongoose.connect(MONGO_URI, {
-      serverSelectionTimeoutMS: 15000,
-      dbName: DB_NAME
-    });
-
-    console.log('✅ Connected to MongoDB DB:', mongoose.connection.name);
-
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log('==> Your service is live');
-    });
-  } catch (err) {
-    console.error('❌ Startup error:', err.message);
-    process.exit(1);
+// ---- Start HTTP server first (so Render can connect), then connect to Mongo ----
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server listening on ${PORT}`);
+  // Connect to Mongo in the background
+  if (!MONGO_URI) {
+    console.error('❌ Missing MongoDB connection string. Set MONGODB_URI or MONGODB_CONN_STRING.');
+    return; // keep server up so /healthz works; page routes will 503 until set
   }
-})();
+  mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 15000, dbName: DB_NAME })
+    .then(() => {
+      dbReady = true;
+      console.log('✅ Connected to MongoDB DB:', mongoose.connection.name);
+    })
+    .catch(err => {
+      // Keep server running; log error so you can fix allowlist/URI without 502s
+      console.error('❌ MongoDB connection error:', err.message);
+    });
+});
