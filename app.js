@@ -10,63 +10,63 @@
 
 require('dotenv').config();
 
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const { engine } = require('express-handlebars');
 
-// Routers
 const restaurantRoutes = require('./routes/restaurantRoutes');
 
 const app = express();
 
 // ---- Config ----
 const PORT = process.env.PORT || 3000;
-// Allow either MONGODB_URI (recommended) or your existing MONGODB_CONN_STRING
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGODB_CONN_STRING;
+const DB_NAME = process.env.MONGO_DBNAME || 'sample_restaurants';
 
 // ---- View Engine (Handlebars) ----
 app.engine('.hbs', engine({ extname: '.hbs' }));
 app.set('view engine', '.hbs');
+app.set('views', path.join(__dirname, 'views'));
 
 // ---- Middleware ----
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// ---- Health / Root routes (so Render health checks pass) ----
-// replace the old '/' route:
+// ---- Health check (for Render) ----
 app.get('/healthz', (_req, res) => res.status(200).send('OK'));
 
-// make '/' render your main page (pick one):
-app.get('/', (req, res) => {
-  // If you have a view called 'form' or 'restaurants':
-  return res.render('form');               // shows the search form
-  // or:
-  // return res.redirect('/restaurants?page=1&perPage=10');
+// ---- Root -> send users to list page with sensible defaults ----
+app.get('/', (_req, res) => {
+  return res.redirect('/restaurants?page=1&perPage=5');
 });
-
 
 // ---- App Routes ----
 app.use('/', restaurantRoutes);
 
-// ---- Start Server (after DB connects) ----
+// ---- Start Server after DB connects ----
 (async () => {
   try {
     if (!MONGO_URI) {
       throw new Error('Missing MongoDB connection string. Set MONGODB_URI (preferred) or MONGODB_CONN_STRING.');
     }
 
-    // Tighten server selection timeout so failed deploys surface quickly
-    await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 15000 });
-    console.log('✅ Connected to MongoDB');
+    await mongoose.connect(MONGO_URI, {
+      serverSelectionTimeoutMS: 15000,
+      dbName: DB_NAME
+    });
+
+    console.log('✅ Connected to MongoDB DB:', mongoose.connection.name);
 
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
+      console.log('==> Your service is live');
     });
   } catch (err) {
     console.error('❌ Startup error:', err.message);
-    // Fail fast so Render marks the deploy as failed with visible logs
     process.exit(1);
   }
 })();

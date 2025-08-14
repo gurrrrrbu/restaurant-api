@@ -1,32 +1,48 @@
+/****************************************************************************** 
+ * ITE5315 – Project 
+ * I declare that this assignment is my own work in accordance with Humber Academic Policy. 
+ * No part of this assignment has been copied manually or electronically from any other source 
+ * (including web sites) or distributed to other students. 
+ * 
+ * Group member Name: Tandin Phurba, Student IDs:N01654961 Date: 12/08/2025
+ * Group member Name: Aszad Khan, Student IDs:N01668211 Date: 12/08/2025
+ ******************************************************************************/
+
 const express = require('express');
 const router = express.Router();
-const db = require('../data/restaurantDB');
+const Restaurant = require('../models/Restaurant');
 
-// Form view
-router.get('/form', (req, res) => {
-  res.render('form');
-});
-
-// Restaurant listing
-router.get('/restaurants', async (req, res) => {
-  const { page = 1, perPage = 5, borough } = req.query;
+// List with optional borough filter + pagination
+router.get('/restaurants', async (req, res, next) => {
   try {
-    const restaurants = await db.getAllRestaurants(
-      parseInt(page),
-      parseInt(perPage),
-      borough
-    );
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const perPage = Math.min(Math.max(parseInt(req.query.perPage) || 10, 1), 50);
+
+    const boroughRaw = (req.query.borough ?? '').trim();
+    const filter = {};
+    if (boroughRaw) filter.borough = boroughRaw; // only filter if borough provided
+
+    const [items, total] = await Promise.all([
+      Restaurant.find(filter)
+        .skip((page - 1) * perPage)
+        .limit(perPage)
+        .lean(),
+      Restaurant.countDocuments(filter)
+    ]);
+
     res.render('restaurants', {
-      restaurants,
-      page: parseInt(page),
-      perPage: parseInt(perPage),
-      borough,
-      prevPage: page > 1 ? parseInt(page) - 1 : null,
-      nextPage: restaurants.length === parseInt(perPage) ? parseInt(page) + 1 : null,
+      restaurants: items,
+      page,
+      perPage,
+      borough: boroughRaw,
+      total,
+      hasPrev: page > 1,
+      hasNext: page * perPage < total
     });
   } catch (err) {
-    res.status(500).send("Error retrieving restaurants");
+    next(err);
   }
 });
 
 module.exports = router;
+

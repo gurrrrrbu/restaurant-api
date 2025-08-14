@@ -12,3 +12,5 @@ services:
         value: 20
       - key: MONGODB_URI
         sync: false
+      - key: MONGO_DBNAME
+        sync: false
