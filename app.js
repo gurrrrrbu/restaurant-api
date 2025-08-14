@@ -35,8 +35,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ---- Health / Root routes (so Render health checks pass) ----
-app.get('/', (_req, res) => res.status(200).send('OK'));
-app.get('/healthz', (_req, res) => res.status(200).json({ status: 'ok' }));
+// replace the old '/' route:
+app.get('/healthz', (_req, res) => res.status(200).send('OK'));
+
+// make '/' render your main page (pick one):
+app.get('/', (req, res) => {
+  // If you have a view called 'form' or 'restaurants':
+  return res.render('form');               // shows the search form
+  // or:
+  // return res.redirect('/restaurants?page=1&perPage=10');
+});
+
 
 // ---- App Routes ----
 app.use('/', restaurantRoutes);
