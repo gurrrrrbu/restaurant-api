@@ -1,28 +1,37 @@
-{{!-- views/restaurants.hbs --}}
-<h2>Restaurants</h2>
+<div class="container my-4">
+  <div class="mb-3">
+    <span class="btn btn-outline-secondary disabled">Search Restaurants</span>
+    <form method="GET" action="/restaurants" class="d-inline ms-2">
+      <input type="hidden" name="page" value="1">
+      <input type="hidden" name="perPage" value="{{perPage}}">
+      <input class="form-control d-inline w-auto" type="text" name="borough" placeholder="Borough (optional)"
+             value="{{borough}}">
+      <button class="btn btn-primary ms-2" type="submit">Search</button>
+    </form>
+  </div>
 
-<ul>
-  {{#each restaurants}}
-    <li>{{this.name}} - {{this.borough}}</li>
-  {{/each}}
-</ul>
+  <h1>Restaurants</h1>
 
-<div class="d-flex justify-content-between mt-4">
-  {{#if prevPage}}
-    <a class="btn btn-outline-primary" href="/restaurants?page={{prevPage}}&perPage={{perPage}}{{#if borough}}&borough={{borough}}{{/if}}">Previous</a>
-  {{/if}}
+  {{#if restaurants.length}}
+    <ul class="list-group my-3">
+      {{#each restaurants}}
+        <li class="list-group-item">
+          <strong>{{this.name}}</strong> — {{this.borough}} | {{this.cuisine}}
+        </li>
+      {{/each}}
+    </ul>
 
-  {{#if nextPage}}
-    <a class="btn btn-outline-primary" href="/restaurants?page={{nextPage}}&perPage={{perPage}}{{#if borough}}&borough={{borough}}{{/if}}">Next</a>
+    <div class="d-flex gap-2">
+      {{#if hasPrev}}
+        <a class="btn btn-outline-secondary"
+           href="/restaurants?page={{decrement page}}&perPage={{perPage}}&borough={{borough}}">Prev</a>
+      {{/if}}
+      {{#if hasNext}}
+        <a class="btn btn-outline-secondary"
+           href="/restaurants?page={{increment page}}&perPage={{perPage}}&borough={{borough}}">Next</a>
+      {{/if}}
+    </div>
+  {{else}}
+    <p class="text-muted mt-3">No restaurants found for your filters.</p>
   {{/if}}
 </div>
-<div class="d-flex justify-content-between mt-4">
-  {{#if prevPage}}
-    <a class="btn btn-outline-primary" href="/restaurants?page={{prevPage}}&perPage={{perPage}}&borough={{borough}}">Previous</a>
-  {{/if}}
-  
-  {{#if nextPage}}
-    <a class="btn btn-outline-primary" href="/restaurants?page={{nextPage}}&perPage={{perPage}}&borough={{borough}}">Next</a>
-  {{/if}}
-</div>
-
