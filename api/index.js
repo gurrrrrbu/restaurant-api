@@ -6,9 +6,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const { engine } = require('express-handlebars');
-const serverless = require('serverless-http');
 
-// reuse your existing router
 const restaurantRoutes = require('../routes/restaurantRoutes');
 
 const app = express();
@@ -30,7 +28,7 @@ async function connectMongo() {
   await mongoPromise;
 }
 
-// Only gate routes that actually need DB
+// Only require DB for routes that need it
 app.use(async (req, res, next) => {
   try {
     if (req.path.startsWith('/restaurants')) {
@@ -43,7 +41,7 @@ app.use(async (req, res, next) => {
   }
 });
 
-// ---- Views / middleware ----
+// Views / middleware
 app.engine('.hbs', engine({
   extname: '.hbs',
   helpers: {
@@ -59,11 +57,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// ---- Routes ----
+// Routes
 app.get('/healthz', (_req, res) => res.status(200).send('OK'));
 app.get('/', (_req, res) => res.render('form', { page: 1, perPage: 5, borough: '' }));
-app.get('/form', (_req, res) => res.redirect('/')); // if anyone hits /form directly
+app.get('/form', (_req, res) => res.redirect('/'));
 app.use('/', restaurantRoutes);
 
-// Export a Vercel handler
-module.exports = serverless(app);
+// *** This is the key for Vercel: export the Express app directly ***
+module.exports = app;
