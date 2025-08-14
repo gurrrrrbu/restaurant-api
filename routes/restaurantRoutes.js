@@ -12,15 +12,17 @@ const express = require('express');
 const router = express.Router();
 const Restaurant = require('../models/Restaurant');
 
-// List with optional borough filter + pagination
 router.get('/restaurants', async (req, res, next) => {
   try {
+    // require the search inputs (the form always sends them)
+    if (!req.query.page || !req.query.perPage) return res.redirect('/');
+
     const page = Math.max(parseInt(req.query.page) || 1, 1);
     const perPage = Math.min(Math.max(parseInt(req.query.perPage) || 10, 1), 50);
 
     const boroughRaw = (req.query.borough ?? '').trim();
     const filter = {};
-    if (boroughRaw) filter.borough = boroughRaw; // only filter if borough provided
+    if (boroughRaw) filter.borough = boroughRaw;
 
     const [items, total] = await Promise.all([
       Restaurant.find(filter)

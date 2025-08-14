@@ -41,7 +41,7 @@ app.get('/healthz', (_req, res) => res.status(200).send('OK'));
 
 // ---- Root -> send users to list page with sensible defaults ----
 app.get('/', (_req, res) => {
-  return res.redirect('/restaurants?page=1&perPage=5');
+  return res.render('form', { page: 1, perPage: 5, borough: '' });
 });
 
 // ---- App Routes ----
